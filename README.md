@@ -15,3 +15,6 @@ MIT license.
 ## Install
  - `go build && ./gitmon` or
  - `go get github.com/liamzebedee/gitmonitor`
+
+## Precompiled binaries
+See `dist/`
