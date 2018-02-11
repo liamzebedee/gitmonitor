@@ -1,39 +1,29 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os/user"
 	"time"
-	"path/filepath"
-	"os"
 	"github.com/mattn/go-zglob"
 	"github.com/fsnotify/fsnotify"
 )
 
 func findGitRepos(homedir string) []string {
-	repos, err := zglob.Glob(homedir + "/**/.git")
+	repos, err := zglob.Glob(homedir + "/**/.git/index")
 
+	// Filter non git dirs
+	// ie: Fatal: Not a git repository
     if err != nil {
         log.Fatal(err)
 	}
-	
+
 	log.Println("Done")
 	return repos
 }
 
-func getDirsTree(dirPath string) (dirs []string) {
-	filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() {
-			dirs = append(dirs, path)
-		}
-		return nil
-	})
-
-	return dirs
-}
-
 func main() {
+	log.Println("indexing git repos")
+
 	usr, err := user.Current()
     if err != nil {
         log.Fatal( err )
@@ -50,22 +40,12 @@ func main() {
 		sendPathsToWatcher := func() {
 			count := 0
 
-			for _, repo := range findGitRepos(homedir) {
-				dir := filepath.Dir(repo)
-
-				// dirs, _ := zglob.Glob(dir + "/**/")
-				dirs := getDirsTree(dir)
-
-				count += len(dirs)
-
-				repoChan <- dir
-				for _, subdir := range dirs {
-					fmt.Println(count, subdir)
-					repoChan <- subdir
-				}
+			for _, f := range findGitRepos(homedir) {
+				count += 1
+				repoChan <- f
 			}
 
-			fmt.Println(count)
+			log.Println("")
 		}
 
 		// First run.
